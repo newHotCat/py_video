@@ -1,11 +1,11 @@
 from sqlalchemy import Column, String, Integer, SmallInteger, BigInteger, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from flask_sqlalchemy import SQLAlchemy, Model
+from flask_sqlalchemy import SQLAlchemy
 from flask import current_app
 from datetime import datetime
 
-db = SQLAlchemy(current_app)
-
+db = SQLAlchemy()
+Model = db.Model
 # 会员
 class User(Model):
     __tablename__ = 'user'
@@ -127,16 +127,48 @@ class Role(Model):
     name = Column(String(100), unique=True)  # 名称
     auths = Column(String(600), unique=True)  # 地址
     addtime = Column(DateTime, index=True, default=datetime.now)    # 创建时间
+    admins = relationship('Admin', backref='role') # 管理员外键关系关联
 
     def __repr__(self):
         return '<Role %r>' % self.name
 
+# 管理员
+class Admin(Model):
+    __tablename__ = 'admin'
+    id = Column(Integer, primary_key=True)  # 编号
+    name = Column(String(100), unique=True)  # 管理员账号
+    pwd = Column(String(100))   # 密码
+    is_super = Column(SmallInteger) # 是否为超级管理员， 0 为超级管理员
+    role_id = Column(Integer, ForeignKey('role.id')) # 所属角色
+    addtime = Column(DateTime, index=True, default=datetime.now)    # 创建时间
+    adminlogs = relationship('Adminlog', backref='admin') # 管理员登录日志关系关联
+    oplogs = relationship('Oplog', backref='admin') # 操作登录日志关系关联
 
+    def __repr__(self):
+        return '<Admin %r>' % self.name
 
+# 管理员登录日志
+class Adminlog(Model):
+    __tablename__ = 'adminlog'
+    id = Column(Integer, primary_key=True) # 编号
+    admin_id = Column(Integer, ForeignKey('admin.id')) # 所属管理员
+    ip = Column(String(100))    # ip地址
+    reason = Column(String(600)) # 操作原因
+    addtime = Column(DateTime, index=True, default=datetime.now)    # 创建时间
 
+    def __repr__(self):
+        return '<Adminlog %r>' % self.id
 
+# 操作日志
+class Oplog(Model):
+    __tablename__ = 'oplog'
+    id = Column(Integer, primary_key=True) # 编号
+    admin_id = Column(Integer, ForeignKey('admin.id')) # 所属管理员
+    ip = Column(String(100))    # ip地址
+    addtime = Column(DateTime, index=True, default=datetime.now)    # 创建时间
 
-
+    def __repr__(self):
+        return '<Oplog %r>' % self.id
 
 
 
